@@ -6,8 +6,8 @@ from psycopg2.extras import execute_batch
 from sqlalchemy import create_engine
 
 # Конфигурация
-DB_USER = 'test'
-DB_PASSWORD = '1'
+DB_USER = 'etl_user'
+DB_PASSWORD = 'etl_pass'
 DB_HOST = 'localhost'
 DB_PORT = '5432'
 DB_NAME = 'project1'
@@ -108,7 +108,7 @@ def import_csv_to_db(csv_path):
     data_tuples = [tuple(x) for x in df.to_numpy()]
 
     try:
-        execute_batch(cursor, insert_sql, data_tuples, page_size=1000)
+        execute_batch(cursor, insert_sql, data_tuples, page_size=100000)
         print(f"✅ UPSERT успешно завершён: '{csv_path}' → {SCHEMA}.{table_name} (ключи: {unique_keys})")
     except Exception as e:
         print(f"❌ Ошибка при UPSERT в '{table_name}': {e}")

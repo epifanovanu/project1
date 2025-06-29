@@ -1,3 +1,7 @@
+DROP SCHEMA DS CASCADE;
+DROP SCHEMA DM CASCADE;
+DROP SCHEMA LOGS CASCADE;
+
 CREATE SCHEMA IF NOT EXISTS DS;
 CREATE SCHEMA IF NOT EXISTS DM;
 CREATE SCHEMA IF NOT EXISTS LOGS;
@@ -152,3 +156,21 @@ CREATE TABLE LOGS.ETL_LOG (
     ROW_COUNT INT,
     MESSAGE TEXT
 );
+
+
+-- ==========================
+-- Пользователи
+-- ==========================
+-- etl_user
+DROP USER etl_user;
+CREATE USER etl_user WITH PASSWORD 'etl_pass';
+GRANT USAGE ON SCHEMA ds TO etl_user;
+GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA ds TO etl_user;
+GRANT USAGE, SELECT ON SEQUENCE ds.ft_posting_f_id_seq TO etl_user;
+
+
+-- logger_user
+DROP USER logger_user;
+CREATE USER logger_user WITH PASSWORD 'logger_pass';
+GRANT USAGE ON SCHEMA logs TO logger_user;
+GRANT SELECT,INSERT,UPDATE ON logs.etl_log TO logger_user;
