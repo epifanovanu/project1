@@ -94,7 +94,10 @@ def import_csv_to_db(csv_path):
         df = pd.read_csv(csv_path, sep=';', decimal='.', parse_dates=date_cols if date_cols else [],
                          dayfirst=False, encoding='ISO-8859-1',dtype=dtypes)
     df.columns = df.columns.str.lower()
-   
+
+    records_count = len(df)
+    log_etl('INFO', f"Количество записей в файле {csv_path}: {records_count}")
+    print(f"ℹ️  Количество записей в файле {csv_path}: {records_count}")
   
     if date_cols:
         for col in date_cols:
