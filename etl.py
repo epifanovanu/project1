@@ -20,6 +20,26 @@ conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host
 conn.autocommit = True
 cursor = conn.cursor()
 
+LOGGER_USER = 'logger_user'
+LOGGER_PASSWORD = 'logger_pass'
+
+# Подключение к БД логгирования
+loggerconn = psycopg2.connect(dbname=DB_NAME, user=LOGGER_USER, password=LOGGER_PASSWORD, host=DB_HOST, port=DB_PORT)
+loggerconn.autocommit = True
+loggercursor = loggerconn.cursor()
+
+def log_etl(severity, message):
+    insert_log = """
+        INSERT INTO logs.etl_log (log_time, severity, message)
+        VALUES (now(), %s, %s)
+    """
+    try:
+        loggercursor.execute(insert_log, (severity, message))
+    except Exception as e:
+        print(f"❌ Ошибка при записи лога (logger_user): {e}")
+
+
+
 def get_unique_columns(table_name):
     query = """
         SELECT a.attname
@@ -31,15 +51,21 @@ def get_unique_columns(table_name):
     return [row[0] for row in cursor.fetchall()]
 
 def import_csv_to_db(csv_path):
+    log_etl('INFO', f"Начата обработка файла: {csv_path}...")
+    print(f"ℹ️  Начата обработка файла: {csv_path}...")
+
     table_name = os.path.splitext(os.path.basename(csv_path))[0].lower()
+    log_etl('INFO', f"Определяем таблицу для экспорта как {SCHEMA}.{table_name}")
     print(f"ℹ️  Определяем таблицу для экспорта как {SCHEMA}.{table_name}")
      
     try:
         header = pd.read_csv(csv_path, sep=';', nrows=0, encoding='utf-8').columns.str.lower()
     except UnicodeDecodeError:
-        print(f"⚠️  Ошибка кодировки, испольуем ISO-8859-1 ")
+        log_etl('WARNING', f"Ошибка кодировки, испольуем ISO-8859-1")
+        print(f"⚠️  Ошибка кодировки, испольуем ISO-8859-1")
         header = pd.read_csv(csv_path, sep=';', nrows=0, encoding='ISO-8859-1').columns.str.lower()
 
+    log_etl('INFO', f"Заголовки из файла {csv_path}: {header.to_list()}")
     print(f"ℹ️  Заголовки из файла {csv_path}: {header.to_list()}")
 
     dtypes = {}
@@ -53,15 +79,18 @@ def import_csv_to_db(csv_path):
     
     if not date_cols:
         date_cols = None
+        log_etl('INFO', f"Столбцы с датой не найдены")
         print(f"ℹ️  Столбцы с датой не найдены")
     else:
+        log_etl('INFO', f"Столбцы с датой: {date_cols}")
         print(f"ℹ️  Столбцы с датой: {date_cols}")
  
     try:
         df = pd.read_csv(csv_path, sep=';', decimal='.', parse_dates=date_cols if date_cols else [],
                          dayfirst=True, encoding='utf-8',dtype=dtypes)
     except UnicodeDecodeError:
-        print(f"⚠️  Ошибка кодировки, испольуем ISO-8859-1 ")
+        log_etl('WARNING',f"Ошибка кодировки, испольуем ISO-8859-1")
+        print(f"⚠️  Ошибка кодировки, испольуем ISO-8859-1")
         df = pd.read_csv(csv_path, sep=';', decimal='.', parse_dates=date_cols if date_cols else [],
                          dayfirst=False, encoding='ISO-8859-1',dtype=dtypes)
     df.columns = df.columns.str.lower()
@@ -75,12 +104,12 @@ def import_csv_to_db(csv_path):
     # Получаем ключи и varchar длины
     unique_keys = get_unique_columns(table_name)
     if not unique_keys:
+        log_etl('WARNING',f"Таблица '{SCHEMA}.{table_name}' не имеет уникальных ключей, пропускаем.")
         print(f"⚠️ Таблица '{SCHEMA}.{table_name}' не имеет уникальных ключей, пропускаем.")
         return
     else:
+        log_etl('INFO',f"Таблица '{SCHEMA}.{table_name}' имеет следующие уникальные ключи: {unique_keys}")
         print(f"ℹ️  Таблица '{SCHEMA}.{table_name}' имеет следующие уникальные ключи: {unique_keys}")
-        
-   
 
     columns = list(df.columns)
     col_names_sql = sql.SQL(', ').join(map(sql.Identifier, columns))
@@ -109,16 +138,19 @@ def import_csv_to_db(csv_path):
 
     try:
         execute_batch(cursor, insert_sql, data_tuples, page_size=100000)
-        print(f"✅ UPSERT успешно завершён: '{csv_path}' → {SCHEMA}.{table_name} (ключи: {unique_keys})")
+        log_etl('INFO',f"Загрузка файла {csv_path} завершена")        
+        print(f"✅ Загрузка файла {csv_path} завершена")
     except Exception as e:
-        print(f"❌ Ошибка при UPSERT в '{table_name}': {e}")
+        log_etl('ERROR',f"Ошибка при загрузке файла'{csv_path}': {e}")        
+        print(f"❌ Ошибка при загрузке файла'{csv_path}': {e}")
 
 # Основной цикл
 for filename in os.listdir(CSV_DIR_PATH):
     if filename.lower().endswith('.csv'):
         full_path = os.path.join(CSV_DIR_PATH, filename)
         try:
-            print(f"ℹ️  Обработка файла {full_path}...")
             import_csv_to_db(full_path)
         except Exception as e:
+            log_etl('ERROR', f"Ошибка при импорте '{filename}': {e}")
             print(f"❌ Ошибка при импорте '{filename}': {e}")
+            
