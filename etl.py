@@ -139,8 +139,8 @@ def import_csv_to_db(csv_path):
 
     try:
         execute_batch(cursor, insert_sql, data_tuples, page_size=10000)
-        log_etl('INFO',f"Загрузка файла {csv_path} завершена")        
-        print(f"✅ Загрузка файла {csv_path} завершена")
+        log_etl('INFO',f"Обработка файла {csv_path} завершена")        
+        print(f"✅ Обработка файла {csv_path} завершена")
     except Exception as e:
         log_etl('ERROR',f"Ошибка при загрузке файла'{csv_path}': {e}")        
         print(f"❌ Ошибка при загрузке файла'{csv_path}': {e}")
