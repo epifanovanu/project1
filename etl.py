@@ -38,8 +38,6 @@ def log_etl(severity, message):
     except Exception as e:
         print(f"❌ Ошибка при записи лога (logger_user): {e}")
 
-
-
 def get_unique_columns(table_name):
     query = """
         SELECT a.attname
@@ -140,7 +138,7 @@ def import_csv_to_db(csv_path):
     data_tuples = [tuple(x) for x in df.to_numpy()]
 
     try:
-        execute_batch(cursor, insert_sql, data_tuples, page_size=100000)
+        execute_batch(cursor, insert_sql, data_tuples, page_size=10000)
         log_etl('INFO',f"Загрузка файла {csv_path} завершена")        
         print(f"✅ Загрузка файла {csv_path} завершена")
     except Exception as e:
