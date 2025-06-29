@@ -30,39 +30,43 @@ def get_unique_columns(table_name):
     cursor.execute(query, (f"{SCHEMA}.{table_name}",))
     return [row[0] for row in cursor.fetchall()]
 
-def get_varchar_columns_length(table_name):
-    query = """
-        SELECT column_name, character_maximum_length
-        FROM information_schema.columns
-        WHERE table_schema = %s AND table_name = %s AND data_type = 'character varying'
-    """
-    cursor.execute(query, (SCHEMA, table_name))
-    return {row[0]: row[1] for row in cursor.fetchall()}
-
 def import_csv_to_db(csv_path):
     table_name = os.path.splitext(os.path.basename(csv_path))[0].lower()
-
+    print(f"ℹ️  Определяем таблицу для экспорта как {SCHEMA}.{table_name}")
+     
     try:
         header = pd.read_csv(csv_path, sep=';', nrows=0, encoding='utf-8').columns.str.lower()
     except UnicodeDecodeError:
-        print(f"❌ Ошибка чтения заголовков '{csv_path}' с utf-8. Пробуем cp1251.")
-        header = pd.read_csv(csv_path, sep=';', nrows=0, encoding='cp1251').columns.str.lower()
+        print(f"⚠️  Ошибка кодировки, испольуем ISO-8859-1 ")
+        header = pd.read_csv(csv_path, sep=';', nrows=0, encoding='ISO-8859-1').columns.str.lower()
+
+    print(f"ℹ️  Заголовки из файла {csv_path}: {header.to_list()}")
+
+    dtypes = {}
+    
+    for col in ['currency_code','code_iso_num','account_number']:
+        if col in header:
+            print(f"ℹ️  Переопределяем тип данных для столбца {col} = str")
+            dtypes[col.upper()] = str
 
     date_cols = [col.upper() for col in header if 'date' in col]
-
+    
     if not date_cols:
         date_cols = None
-
+        print(f"ℹ️  Столбцы с датой не найдены")
+    else:
+        print(f"ℹ️  Столбцы с датой: {date_cols}")
+ 
     try:
         df = pd.read_csv(csv_path, sep=';', decimal='.', parse_dates=date_cols if date_cols else [],
-                         dayfirst=True, encoding='utf-8')
+                         dayfirst=True, encoding='utf-8',dtype=dtypes)
     except UnicodeDecodeError:
-        print(f"❌ Ошибка чтения '{csv_path}' с utf-8. Пробуем ISO-8859-1.")
+        print(f"⚠️  Ошибка кодировки, испольуем ISO-8859-1 ")
         df = pd.read_csv(csv_path, sep=';', decimal='.', parse_dates=date_cols if date_cols else [],
-                         dayfirst=False, encoding='ISO-8859-1')
-
+                         dayfirst=False, encoding='ISO-8859-1',dtype=dtypes)
     df.columns = df.columns.str.lower()
-
+   
+  
     if date_cols:
         for col in date_cols:
             col_lower = col.lower()
@@ -73,13 +77,10 @@ def import_csv_to_db(csv_path):
     if not unique_keys:
         print(f"⚠️ Таблица '{SCHEMA}.{table_name}' не имеет уникальных ключей, пропускаем.")
         return
-
-    varchar_lengths = get_varchar_columns_length(table_name)
-
-    # Обрезаем varchar столбцы
-    for col, max_len in varchar_lengths.items():
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.slice(0, max_len)
+    else:
+        print(f"ℹ️  Таблица '{SCHEMA}.{table_name}' имеет следующие уникальные ключи: {unique_keys}")
+        
+   
 
     columns = list(df.columns)
     col_names_sql = sql.SQL(', ').join(map(sql.Identifier, columns))
@@ -117,6 +118,7 @@ for filename in os.listdir(CSV_DIR_PATH):
     if filename.lower().endswith('.csv'):
         full_path = os.path.join(CSV_DIR_PATH, filename)
         try:
+            print(f"ℹ️  Обработка файла {full_path}...")
             import_csv_to_db(full_path)
         except Exception as e:
             print(f"❌ Ошибка при импорте '{filename}': {e}")
