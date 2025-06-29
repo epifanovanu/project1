@@ -46,18 +46,16 @@ def import_csv_to_db(csv_path):
             sep=';',
             decimal='.',
             parse_dates = date_cols if date_cols else [],
-            dayfirst=True,
             encoding='utf-8'  # сначала пробуем UTF-8
         )
     except UnicodeDecodeError:
-        print(f"❌ Ошибка кодировки при чтении '{csv_path}' с utf-8. Пробуем cp1251.")
+        print(f"❌ Ошибка кодировки при чтении '{csv_path}' с utf-8. Пробуем ISO-8859-1.")
         df = pd.read_csv(
             csv_path,
             sep=';',
             decimal='.',
             parse_dates = date_cols if date_cols else [],
-            dayfirst=True,
-            encoding='cp1251'
+            encoding='ISO-8859-1'
         )
     df.columns = df.columns.str.lower()
 
