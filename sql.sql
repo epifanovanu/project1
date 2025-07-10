@@ -177,3 +177,5 @@ CREATE USER logger_user WITH PASSWORD 'logger_pass';
 GRANT USAGE ON SCHEMA logs TO logger_user;
 GRANT SELECT,INSERT,UPDATE ON logs.etl_log TO logger_user;
 GRANT USAGE, SELECT ON SEQUENCE logs.etl_log_id_seq TO logger_user;
+
+
