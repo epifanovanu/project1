@@ -46,16 +46,22 @@ BEGIN
         AND i_OnDate BETWEEN a.data_actual_date AND a.data_actual_end_date
     LEFT JOIN ds.md_exchange_rate_d r ON r.currency_rk = a.currency_rk
         AND i_OnDate BETWEEN r.data_actual_date AND r.data_actual_end_date
-    GROUP BY t.account_rk, r.reduced_cource;
+    GROUP BY t.account_rk, r.reduced_cource
+    HAVING SUM(t.credit_amount) > 0 OR SUM(t.debet_amount) > 0;
 
     -- Логируем успешное завершение и время выполнения
     INSERT INTO logs.etl_log(severity, message)
     VALUES ('INFO', 'fill_account_turnover_f finished for date ' || i_OnDate || 
            '. Duration: ' || EXTRACT(EPOCH FROM clock_timestamp() - v_start_time) || ' seconds');
 
+EXCEPTION
+    WHEN OTHERS THEN
+        INSERT INTO logs.etl_log(severity, message)
+        VALUES ('ERROR', 'fill_account_turnover_f failed for date ' || i_OnDate || 
+                '. Error: ' || SQLERRM);
+        RAISE;
 END;
 $$;
-
 
 CREATE OR REPLACE PROCEDURE ds.fill_account_balance_f(i_OnDate DATE)
 LANGUAGE plpgsql

@@ -78,8 +78,3 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-SELECT SUM(balance_out_rub)
-FROM dm.dm_account_balance_f
-WHERE on_date = (i_OnDate - INTERVAL '1 month' - INTERVAL '1 day')::date;
-
-
