@@ -6,6 +6,10 @@ DECLARE
     v_to_date DATE := (i_OnDate - INTERVAL '1 day')::DATE;
     v_prev_date DATE := (v_from_date - INTERVAL '1 day')::DATE;
 BEGIN
+    -- Логируем начало процедуры
+    INSERT INTO logs.etl_log (log_time, severity, message)
+    VALUES (now(), 'INFO', format('Начало fill_f101_round_f на дату %s', i_OnDate));
+
     DELETE FROM dm.dm_f101_round_f WHERE from_date = v_from_date AND to_date = v_to_date;
 
     INSERT INTO dm.dm_f101_round_f (
@@ -65,8 +69,18 @@ BEGIN
     WHERE a.data_actual_date <= v_to_date AND a.data_actual_end_date >= v_from_date
     GROUP BY LEFT(a.account_number, 5), LEFT(l.chapter, 1), a.char_type;
 
+    -- Логируем успешное завершение
+    INSERT INTO logs.etl_log (log_time, severity, message)
+    VALUES (now(), 'INFO', format('Успешное завершение fill_f101_round_f на дату %s', i_OnDate));
+
+EXCEPTION
+    WHEN OTHERS THEN
+        INSERT INTO logs.etl_log (log_time, severity, message)
+        VALUES (now(), 'ERROR', format('Ошибка в fill_f101_round_f на дату %s: %s', i_OnDate, SQLERRM));
+        RAISE;
 END;
 $$;
+
 
 
 DO $$
