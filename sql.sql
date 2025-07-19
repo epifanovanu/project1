@@ -109,39 +109,44 @@ CREATE TABLE DM.DM_ACCOUNT_TURNOVER_F (
     PRIMARY KEY (ON_DATE, ACCOUNT_RK)
 );
 
--- DM_F101_ROUND_F
-CREATE TABLE DM.DM_F101_ROUND_F (
-    FROM_DATE DATE,
-    TO_DATE DATE,
-    CHAPTER CHAR(1),
-    LEDGER_ACCOUNT CHAR(5),
-    CHARACTERISTIC CHAR(1),
-    BALANCE_IN_RUB NUMERIC(23,8),
-    R_BALANCE_IN_RUB NUMERIC(23,8),
-    BALANCE_IN_VAL NUMERIC(23,8),
-    R_BALANCE_IN_VAL NUMERIC(23,8),
-    BALANCE_IN_TOTAL NUMERIC(23,8),
-    R_BALANCE_IN_TOTAL NUMERIC(23,8),
-    TURN_DEB_RUB NUMERIC(23,8),
-    R_TURN_DEB_RUB NUMERIC(23,8),
-    TURN_DEB_VAL NUMERIC(23,8),
-    R_TURN_DEB_VAL NUMERIC(23,8),
-    TURN_DEB_TOTAL NUMERIC(23,8),
-    R_TURN_DEB_TOTAL NUMERIC(23,8),
-    TURN_CRE_RUB NUMERIC(23,8),
-    R_TURN_CRE_RUB NUMERIC(23,8),
-    TURN_CRE_VAL NUMERIC(23,8),
-    R_TURN_CRE_VAL NUMERIC(23,8),
-    TURN_CRE_TOTAL NUMERIC(23,8),
-    R_TURN_CRE_TOTAL NUMERIC(23,8),
-    BALANCE_OUT_RUB NUMERIC(23,8),
-    R_BALANCE_OUT_RUB NUMERIC(23,8),
-    BALANCE_OUT_VAL NUMERIC(23,8),
-    R_BALANCE_OUT_VAL NUMERIC(23,8),
-    BALANCE_OUT_TOTAL NUMERIC(23,8),
-    R_BALANCE_OUT_TOTAL NUMERIC(23,8),
-    PRIMARY KEY (FROM_DATE, TO_DATE, CHAPTER, LEDGER_ACCOUNT, CHARACTERISTIC)
+
+CREATE TABLE DM.DM_ACCOUNT_BALANCE_F (
+    ON_DATE          DATE           NOT NULL,   -- дата, за которую актуален остаток
+    ACCOUNT_RK       NUMERIC         NOT NULL,   -- идентификатор счета
+    BALANCE_OUT      NUMERIC(23,8),              -- остаток в валюте счета
+    BALANCE_OUT_RUB  NUMERIC(23,8),              -- остаток в рублях
+    PRIMARY KEY (ON_DATE, ACCOUNT_RK)
 );
+
+
+--======1-3
+CREATE TABLE dm.dm_f101_round_f (
+    from_date DATE NOT NULL,               -- Начало интервала расчета
+    to_date DATE NOT NULL,                 -- Конец интервала расчета
+    chapter CHAR(1) NOT NULL,              -- Глава баланса (1 символ)
+    ledger_account CHAR(5) NOT NULL,       -- Балансовый счет (первые 5 символов account_number)
+    characteristic CHAR(1) NOT NULL,       -- Характеристика счета (char_type)
+    
+    balance_in_rub NUMERIC(23,8) DEFAULT 0,    -- Входящий остаток для рублевых счетов
+    balance_in_val NUMERIC(23,8) DEFAULT 0,    -- Входящий остаток для валютных счетов
+    balance_in_total NUMERIC(23,8) DEFAULT 0,  -- Входящий остаток - итого
+    
+    turn_deb_rub NUMERIC(23,8) DEFAULT 0,      -- Сумма дебетовых оборотов для рублевых счетов
+    turn_deb_val NUMERIC(23,8) DEFAULT 0,      -- Сумма дебетовых оборотов для валютных счетов
+    turn_deb_total NUMERIC(23,8) DEFAULT 0,    -- Сумма дебетовых оборотов - итого
+    
+    turn_cre_rub NUMERIC(23,8) DEFAULT 0,      -- Сумма кредитовых оборотов для рублевых счетов
+    turn_cre_val NUMERIC(23,8) DEFAULT 0,      -- Сумма кредитовых оборотов для валютных счетов
+    turn_cre_total NUMERIC(23,8) DEFAULT 0,    -- Сумма кредитовых оборотов - итого
+    
+    balance_out_rub NUMERIC(23,8) DEFAULT 0,   -- Сумма исходящего остатка для рублевых счетов
+    balance_out_val NUMERIC(23,8) DEFAULT 0,   -- Сумма исходящего остатка для валютных счетов
+    balance_out_total NUMERIC(23,8) DEFAULT 0, -- Сумма исходящего остатка - итого
+    
+    PRIMARY KEY (from_date, to_date, ledger_account)
+);
+
+
 
 -- =======================
 -- Таблица логов (схема LOGS)
