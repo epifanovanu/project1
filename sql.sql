@@ -174,7 +174,8 @@ GRANT USAGE ON SCHEMA dm TO etl_user;
 GRANT CREATE ON SCHEMA dm TO etl_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA dm TO etl_user;
 ALTER MATERIALIZED VIEW dm.mv_101_report OWNER TO etl_user;
-
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE dm.dm_f101_round_f TO etl_user;
+GRANT TRUNCATE ON TABLE dm.dm_f101_round_f TO etl_user;
 
 -- logger_user
 DROP USER logger_user;
