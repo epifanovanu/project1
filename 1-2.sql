@@ -125,3 +125,26 @@ BEGIN
         d := d + INTERVAL '1 day';
     END LOOP;
 END $$ LANGUAGE plpgsql;
+
+DELETE FROM dm.dm_account_balance_f WHERE on_date = DATE '2017-12-31';
+INSERT INTO dm.dm_account_balance_f (
+    on_date,
+    account_rk,
+    balance_out,
+    balance_out_rub
+)
+SELECT
+    f.on_date,
+    f.account_rk,
+    f.balance_out,
+    f.balance_out * COALESCE(r.reduced_cource, 1) AS balance_out_rub
+FROM ds.ft_balance_f f
+LEFT JOIN ds.md_exchange_rate_d r
+    ON r.currency_rk = f.currency_rk
+    AND f.on_date BETWEEN r.data_actual_date AND r.data_actual_end_date
+WHERE f.on_date = DATE '2017-12-31';
+
+
+
+
+
