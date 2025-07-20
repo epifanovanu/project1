@@ -94,6 +94,7 @@ CREATE TABLE DS.MD_LEDGER_ACCOUNT_S (
     PRIMARY KEY (LEDGER_ACCOUNT, START_DATE)
 );
 
+
 -- =======================
 -- Таблицы схемы DM
 -- =======================
